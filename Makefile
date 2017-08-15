@@ -22,4 +22,4 @@
 
 
 mastermind: mastermind.c
-	clang mastermind.c -o mastermind.out
+	clang mastermind.c -O3 -o mastermind.out
