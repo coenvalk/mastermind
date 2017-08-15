@@ -2,6 +2,8 @@
 
 This program plays using Donald Knuth's algorithm to solve a game of mastermind in 6 moves or less.
 
+I originally wrote this in highschool for my math internal assessment for completing the International Baccalaureate diploma program. The paper associated with this program is [here](https://drive.google.com/file/d/0B8CNl_hZHtFzTm5ESzZ0QVRLV0k/view?usp=sharing)
+
 ## Rules and Gameplay of Mastermind
 
 from [wikipedia](https://en.wikipedia.org/wiki/Mastermind_(board_game)):
