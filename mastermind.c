@@ -29,6 +29,16 @@
 #include <stdbool.h>
 #include <time.h>
 
+unsigned char* get_code(int length, unsigned char colors, int index) {
+  unsigned char* code = (unsigned char*) malloc(length * sizeof(unsigned char));
+  int i;
+  for (i = 0; i < length; i++) {
+    code[length - i - 1] = index % colors;
+    index /= colors;
+  }
+  return code;
+}
+
 unsigned char** create_all(int length, unsigned char colors, int n) { // creates list of possible combinations
   unsigned char** S = (unsigned char**) malloc(n * sizeof(unsigned char*));
   unsigned char* first = (unsigned char*) malloc(length * sizeof(unsigned char));
@@ -187,6 +197,7 @@ unsigned char* BestMove(unsigned char** S, int length, unsigned char colors, int
 int main() {
   int length = 4;
   unsigned char colors = 6;
+  print_one(get_code(length, colors, 7), length);
   int n = 1;
   int i;
   for (i = 1; i <= length; i++) {
