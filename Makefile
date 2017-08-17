@@ -23,3 +23,9 @@
 
 mastermind: mastermind.c
 	clang mastermind.c -O3 -Wall -Werror -o mastermind.out
+test:
+	./mastermind.out < tests/test0.txt > test.out
+	diff test.out tests/test0-output.txt
+	./mastermind.out < tests/test1.txt > test.out
+	diff test.out tests/test1-output.txt
+	rm test.out
