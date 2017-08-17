@@ -39,30 +39,22 @@ unsigned char* get_code(int length, unsigned char colors, int index) {
   return code;
 }
 
+/*
+bool* create_all(int length, unsigned char colors, int n) {
+  bool* S = (bool*) malloc(n * sizeof(bool));
+  int i = 0;
+  for (i = 0; i < n; i++) {
+    S[i] = true;
+  }
+  return S;
+}
+*/
+
 unsigned char** create_all(int length, unsigned char colors, int n) { // creates list of possible combinations
   unsigned char** S = (unsigned char**) malloc(n * sizeof(unsigned char*));
-  unsigned char* first = (unsigned char*) malloc(length * sizeof(unsigned char));
   int i;
-  for (i = 0; i < length; i++) {
-    first[i] = 0;
-  }
-  S[0] = first;
-  for (i = 1; i < n; i++) {
-    unsigned char* now = (unsigned char*) malloc(length * sizeof(unsigned char));
-    int j;
-    for (j = 0; j < length; j++) {
-      now[j] = S[i-1][j];
-    }
-    now[length-1]++;
-    for (j = length-1; j > 0; j--) {
-      if (now[j] >= colors) {
-	now[j] = 0;
-	now[j-1]++;
-      } else {
-	break;
-      }
-    }
-    S[i] = now;
+  for (i = 0; i < n; i++) {
+    S[i] = get_code(length, colors, i);
   }
   return S;
 }
@@ -197,7 +189,6 @@ unsigned char* BestMove(unsigned char** S, int length, unsigned char colors, int
 int main() {
   int length = 4;
   unsigned char colors = 6;
-  print_one(get_code(length, colors, 7), length);
   int n = 1;
   int i;
   for (i = 1; i <= length; i++) {
