@@ -1,4 +1,4 @@
-# Mastermind Solver
+# Mastermind Solver [![Build Status](https://travis-ci.org/coenvalk/mastermind.svg?branch=master)](https://travis-ci.org/coenvalk/mastermind)
 
 This program plays using Donald Knuth's algorithm to solve a game of mastermind in 6 moves or less.
 
