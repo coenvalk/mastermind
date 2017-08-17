@@ -29,16 +29,16 @@
 #include <stdbool.h>
 #include <time.h>
 
-char** create_all(int length, int colors, int n) { // creates list of possible combinations
-  char** S = malloc(n * sizeof(char*));
-  char* first = malloc(length * sizeof(char));
+unsigned char** create_all(int length, int colors, int n) { // creates list of possible combinations
+  unsigned char** S = (unsigned char**) malloc(n * sizeof(unsigned char*));
+  unsigned char* first = (unsigned char*) malloc(length * sizeof(unsigned char));
   int i;
   for (i = 0; i < length; i++) {
     first[i] = 0;
   }
   S[0] = first;
   for (i = 1; i < n; i++) {
-    char* now = malloc(length * sizeof(char));
+    unsigned char* now = (unsigned char*) malloc(length * sizeof(unsigned char));
     int j;
     for (j = 0; j < length; j++) {
       now[j] = S[i-1][j];
@@ -57,14 +57,14 @@ char** create_all(int length, int colors, int n) { // creates list of possible c
   return S;
 }
 
-void print_one(char* now, int length) {
+void print_one(unsigned char* now, int length) {
   int i;
   for (i = 0; i < length; i++) {
     printf("%d", (int) now[i]);
   }
 }
 
-void print_all(char** S, int n, int length) { // Prints all current possibilities
+void print_all(unsigned char** S, int n, int length) { // Prints all current possibilities
   int i;
   for (i = 0; i < n; i++) {
     print_one(S[i], length);
@@ -73,7 +73,7 @@ void print_all(char** S, int n, int length) { // Prints all current possibilitie
   printf("\n");
 }
 
-bool isin(char x, char* code, int length) {
+bool isin(unsigned char x, unsigned char* code, int length) {
   int i;
   for (i = 0; i < length; i++) {
     if (code[i] == x) return true;
@@ -81,7 +81,7 @@ bool isin(char x, char* code, int length) {
   return false;
 }
 
-int howmany(char x, char* code, int length) {
+int howmany(unsigned char x, unsigned char* code, int length) {
   int r = 0;
   int i;
   for (i = 0; i < length; i++) {
@@ -90,7 +90,7 @@ int howmany(char x, char* code, int length) {
   return r;
 }
 
-int* analyze(char* code, char* guess, int length, int colors) {
+int* analyze(unsigned char* code, unsigned char* guess, int length, int colors) {
   int i;
   int c = 0;
   int p = 0;
@@ -109,13 +109,13 @@ int* analyze(char* code, char* guess, int length, int colors) {
       }
     }
   }
-  int* r = malloc(sizeof(int) * 2);
+  int* r = (int*) malloc(sizeof(int) * 2);
   r[0] = c-p;
   r[1] = p;
   return r;
 }
 
-int reduce(char** S, char* now, int c, int p, int length, int colors, int n) {
+int reduce(unsigned char** S, unsigned char* now, int c, int p, int length, int colors, int n) {
   int x = 0;
   int i;
   for (i = 0; i < n; i++) {
@@ -126,7 +126,7 @@ int reduce(char** S, char* now, int c, int p, int length, int colors, int n) {
   return x;
 }
 
-int fullReduce(char** S, char* now, int length, int colors, int n) {
+int fullReduce(unsigned char** S, unsigned char* now, int length, int colors, int n) {
   int responses[13][2] = {{0, 0}, {1, 0}, {0, 1}, {2, 0}, {1, 1}, {0, 2}, {3, 0}, {2, 1}, {1, 2}, {0, 3}, {4, 0}, {3, 1}, {2, 2}};
   int x = 0;
   int index = 0;
@@ -141,14 +141,14 @@ int fullReduce(char** S, char* now, int length, int colors, int n) {
   return x;
 }
 
-char** SetReduce(char** S, char* now, int c, int p, int length, int colors, int n, int newN) {
-  char** newS = malloc(sizeof(char*) * newN);
+unsigned char** SetReduce(unsigned char** S, unsigned char* now, int c, int p, int length, int colors, int n, int newN) {
+  unsigned char** newS = malloc(sizeof(unsigned char*) * newN);
   int j = 0;
   int i;
   for (i = 0; i < n; i++) {
     int* r = analyze(S[i], now, length, colors);
     if (r[0] == c && r[1] == p) {
-      newS[j] = malloc(length * sizeof(char));
+      newS[j] = malloc(length * sizeof(unsigned char));
       int k;
       for (k = 0; k < length; k++) {
 	newS[j][k] = S[i][k];
@@ -165,7 +165,7 @@ char** SetReduce(char** S, char* now, int c, int p, int length, int colors, int 
   return newS;
 }
 
-char* BestMove(char** S, int length, int colors, int n) {
+unsigned char* BestMove(unsigned char** S, int length, int colors, int n) {
   int best = 0;
   float bestR = fullReduce(S, S[0], length, colors, n);
   int i;
@@ -192,8 +192,8 @@ int main() {
   for (i = 1; i <= length; i++) {
     n *= colors;
   }
-  char** S = create_all(length, colors, n);
-  char* move = S[7]; //BestMove(S, length, colors, n);
+  unsigned char** S = create_all(length, colors, n);
+  unsigned char* move = S[7]; //BestMove(S, length, colors, n);
   while (n > 0) {
     printf("%d remaining candidates\n", n);
     print_one(move, length);
