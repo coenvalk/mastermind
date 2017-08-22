@@ -1,0 +1,9 @@
+1296 remaining candidates
+0011
+Colors: Place: 256 remaining candidates
+0233
+Colors: Place: 42 remaining candidates
+3413
+Colors: Place: 4 remaining candidates
+0524
+Colors: Place: Yay! I win!

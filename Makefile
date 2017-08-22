@@ -30,4 +30,6 @@ test:
 	diff test.out tests/test1-output.txt
 	./mastermind.out < tests/test2.txt > test.out
 	diff test.out tests/test2-output.txt
+	./mastermind.out < tests/test3.txt > test.out
+	diff test.out tests/test3-output.txt
 	rm test.out
