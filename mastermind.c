@@ -51,7 +51,7 @@ unsigned char *get_code(int length, unsigned char colors, int index)
 /// @param colors 
 /// @param n 
 /// @return boolean array of true values for each code
-bool *create_all(int length, unsigned char colors, int n)
+bool *initialize_array(int length, unsigned char colors, int n)
 {
   bool *S = (bool *)malloc(n * sizeof(bool));
   int i = 0;
@@ -65,7 +65,7 @@ bool *create_all(int length, unsigned char colors, int n)
 /// @brief prints a single code to the console
 /// @param now current code to be printed
 /// @param length length of code
-void print_one(unsigned char *now, int length)
+void print_guess(unsigned char *now, int length)
 {
   int i;
   for (i = 0; i < length; i++)
@@ -79,7 +79,7 @@ void print_one(unsigned char *now, int length)
 /// @param n length of boolean array S
 /// @param length length of code
 /// @param colors unique colors used in game
-void print_all(bool *S, int n, int length, unsigned char colors)
+void print_all_guesses(bool *S, int n, int length, unsigned char colors)
 { // Prints all current possibilities
   int i;
   for (i = 0; i < n; i++)
@@ -87,7 +87,7 @@ void print_all(bool *S, int n, int length, unsigned char colors)
     if (S[i])
     {
       unsigned char *C = get_code(length, colors, i);
-      print_one(C, length);
+      print_guess(C, length);
       free(C);
       printf(", ");
     }
@@ -100,7 +100,7 @@ void print_all(bool *S, int n, int length, unsigned char colors)
 /// @param code code being searched through
 /// @param length length of code
 /// @return true if code contains x, false otherwise
-bool isin(unsigned char x, unsigned char *code, int length)
+bool contains(unsigned char x, unsigned char *code, int length)
 {
   int i;
   for (i = 0; i < length; i++)
@@ -116,7 +116,7 @@ bool isin(unsigned char x, unsigned char *code, int length)
 /// @param code code being searched for
 /// @param length length of code
 /// @return how many instances of character `x` are in code
-int howmany(unsigned char x, unsigned char *code, int length)
+int instance_count(unsigned char x, unsigned char *code, int length)
 {
   int r = 0;
   int i;
@@ -135,8 +135,8 @@ int *analyze(unsigned char *code, unsigned char *guess, int length, unsigned cha
   int p = 0;
   for (i = 0; i < colors; i++)
   {
-    int gue = howmany(i, guess, length);
-    int cod = howmany(i, code, length);
+    int gue = instance_count(i, guess, length);
+    int cod = instance_count(i, code, length);
     if (cod > gue)
       c += gue;
     else
@@ -144,7 +144,7 @@ int *analyze(unsigned char *code, unsigned char *guess, int length, unsigned cha
   }
   for (i = 0; i < length; i++)
   {
-    if (isin(guess[i], code, length))
+    if (contains(guess[i], code, length))
     {
       if (guess[i] == code[i])
       {
@@ -240,7 +240,7 @@ void set_reduce(bool *S, unsigned char *now, int c, int p, int length, unsigned 
 /// @param colors number of possible colors to choose from
 /// @param n length of array S
 /// @return 
-unsigned char *best_move(bool *S, int length, unsigned char colors, int n)
+unsigned char *get_best_move(bool *S, int length, unsigned char colors, int n)
 {
   int best = 0;
   unsigned char *Code = get_code(length, colors, 0);
@@ -255,7 +255,7 @@ unsigned char *best_move(bool *S, int length, unsigned char colors, int n)
       int x = full_reduce(S, Code, length, colors, n);
       free(Code);
       // printf("Code, Value: ");
-      // print_one(S[i], length);
+      // print_guess(S[i], length);
       // printf(" %d\n", x);
       if (x < bestR)
       {
@@ -277,13 +277,15 @@ int main()
   {
     n *= colors;
   }
-  bool *S = create_all(length, colors, n);
-  unsigned char *move = get_code(length, colors, 7); // BestMove(S, length, colors, n);
+  bool *S = initialize_array(length, colors, n);
+
+  // always start with the same move 0011
+  unsigned char *move = get_code(length, colors, 7); // get_best_move(S, length, colors, n);
   int newN = n;
   while (n > 0)
   {
     printf("%d remaining candidates\n", newN);
-    print_one(move, length);
+    print_guess(move, length);
     printf("\n");
     int c;
     int p;
@@ -304,7 +306,7 @@ int main()
     }
     set_reduce(S, move, c, p, length, colors, n);
     free(move);
-    move = best_move(S, length, colors, n);
+    move = get_best_move(S, length, colors, n);
   }
   free(S);
   free(move);
