@@ -29,27 +29,25 @@
 #include <stdbool.h>
 #include <time.h>
 
-/// @brief get code string based on code length and number of unique colors
+/// @brief copy code string based on code length and number of unique colors
 /// @param length code length
 /// @param colors unique colors in code
 /// @param index index to get
-/// @return code string at index with given color characters
-unsigned char *get_code(int length, unsigned char colors, int index)
+/// @param code updated
+void get_code_inplace(int length, unsigned char colors, int index, unsigned char *code)
 {
-  unsigned char *code = (unsigned char *)malloc(length * sizeof(unsigned char));
   int i;
   for (i = 0; i < length; i++)
   {
     code[length - i - 1] = index % colors;
     index /= colors;
   }
-  return code;
 }
 
 /// @brief initializes state of game
-/// @param length 
-/// @param colors 
-/// @param n 
+/// @param length
+/// @param colors
+/// @param n
 /// @return boolean array of true values for each code
 bool *initialize_array(int length, unsigned char colors, int n)
 {
@@ -82,17 +80,18 @@ void print_guess(unsigned char *now, int length)
 void print_all_guesses(bool *S, int n, int length, unsigned char colors)
 { // Prints all current possibilities
   int i;
+  unsigned char *code = calloc(sizeof(unsigned char), length);
   for (i = 0; i < n; i++)
   {
     if (S[i])
     {
-      unsigned char *C = get_code(length, colors, i);
-      print_guess(C, length);
-      free(C);
+      get_code_inplace(length, colors, i, code);
+      print_guess(code, length);
       printf(", ");
     }
   }
   printf("\n");
+  free(code);
 }
 
 /// @brief Checks whether a particular character is in code
@@ -171,18 +170,19 @@ int reduce(bool *S, unsigned char *now, int c, int p, int length, unsigned char 
 {
   int x = 0;
   int i;
+  unsigned char *code = calloc(sizeof(unsigned char), length);
   for (i = 0; i < n; i++)
   {
     if (S[i])
     {
-      unsigned char *Code = get_code(length, colors, i);
-      int *r = analyze(Code, now, length, colors);
-      free(Code);
+      get_code_inplace(length, colors, i, code);
+      int *r = analyze(code, now, length, colors);
       if (r[0] == c && r[1] == p)
         x++;
       free(r);
     }
   }
+  free(code);
   return x;
 }
 
@@ -221,17 +221,18 @@ void set_reduce(bool *S, unsigned char *now, int c, int p, int length, unsigned 
 {
   // int j = 0;
   int i;
+  unsigned char *code = calloc(sizeof(unsigned char), length);
   for (i = 0; i < n; i++)
   {
-    unsigned char *Code = get_code(length, colors, i);
-    int *r = analyze(Code, now, length, colors);
-    free(Code);
+    get_code_inplace(length, colors, i, code);
+    int *r = analyze(code, now, length, colors);
     if (r[0] != c || r[1] != p)
     {
       S[i] = false;
     }
     free(r);
   }
+  free(code);
 }
 
 /// @brief Find best move based on minimax decisionmaking
@@ -239,22 +240,21 @@ void set_reduce(bool *S, unsigned char *now, int c, int p, int length, unsigned 
 /// @param length length of code
 /// @param colors number of possible colors to choose from
 /// @param n length of array S
-/// @return 
+/// @return
 unsigned char *get_best_move(bool *S, int length, unsigned char colors, int n)
 {
   int best = 0;
-  unsigned char *Code = get_code(length, colors, 0);
-  float bestR = full_reduce(S, Code, length, colors, n);
-  free(Code);
+  unsigned char *code = calloc(sizeof(unsigned char), length);
+  get_code_inplace(length, colors, 0, code);
+  float bestR = full_reduce(S, code, length, colors, n);
   int i;
   for (i = 1; i < n; i++)
   {
     if (S[i])
     {
-      Code = get_code(length, colors, i);
-      int x = full_reduce(S, Code, length, colors, n);
-      free(Code);
-      // printf("Code, Value: ");
+      get_code_inplace(length, colors, i, code);
+      int x = full_reduce(S, code, length, colors, n);
+      // printf("code, Value: ");
       // print_guess(S[i], length);
       // printf(" %d\n", x);
       if (x < bestR)
@@ -264,7 +264,9 @@ unsigned char *get_best_move(bool *S, int length, unsigned char colors, int n)
       }
     }
   }
-  return get_code(length, colors, best);
+
+  get_code_inplace(length, colors, best, code);
+  return code;
 }
 
 int main()
@@ -280,7 +282,8 @@ int main()
   bool *S = initialize_array(length, colors, n);
 
   // always start with the same move 0011
-  unsigned char *move = get_code(length, colors, 7); // get_best_move(S, length, colors, n);
+  unsigned char *move = calloc(sizeof(unsigned char), length);
+  get_code_inplace(length, colors, 7, move); // get_best_move(S, length, colors, n);
   int newN = n;
   while (n > 0)
   {
