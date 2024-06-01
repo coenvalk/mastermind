@@ -29,9 +29,11 @@
 #include <stdbool.h>
 #include <time.h>
 
-/*
-  generates indexth code based on length and colors
- */
+/// @brief get code string based on code length and number of unique colors
+/// @param length code length
+/// @param colors unique colors in code
+/// @param index index to get
+/// @return code string at index with given color characters
 unsigned char *get_code(int length, unsigned char colors, int index)
 {
   unsigned char *code = (unsigned char *)malloc(length * sizeof(unsigned char));
@@ -44,9 +46,11 @@ unsigned char *get_code(int length, unsigned char colors, int index)
   return code;
 }
 
-/*
-  creates array that keeps track of which codes are still possible
- */
+/// @brief initializes state of game
+/// @param length 
+/// @param colors 
+/// @param n 
+/// @return boolean array of true values for each code
 bool *create_all(int length, unsigned char colors, int n)
 {
   bool *S = (bool *)malloc(n * sizeof(bool));
@@ -58,6 +62,9 @@ bool *create_all(int length, unsigned char colors, int n)
   return S;
 }
 
+/// @brief prints a single code to the console
+/// @param now current code to be printed
+/// @param length length of code
 void print_one(unsigned char *now, int length)
 {
   int i;
@@ -67,6 +74,11 @@ void print_one(unsigned char *now, int length)
   }
 }
 
+/// @brief prints all codes for which corresponding index is true
+/// @param S array of booleans - one element for each value
+/// @param n length of boolean array S
+/// @param length length of code
+/// @param colors unique colors used in game
 void print_all(bool *S, int n, int length, unsigned char colors)
 { // Prints all current possibilities
   int i;
@@ -83,6 +95,11 @@ void print_all(bool *S, int n, int length, unsigned char colors)
   printf("\n");
 }
 
+/// @brief Checks whether a particular character is in code
+/// @param x character being searched for
+/// @param code code being searched through
+/// @param length length of code
+/// @return true if code contains x, false otherwise
 bool isin(unsigned char x, unsigned char *code, int length)
 {
   int i;
@@ -94,6 +111,11 @@ bool isin(unsigned char x, unsigned char *code, int length)
   return false;
 }
 
+/// @brief counts how many instances of x are in code
+/// @param x character being searched for
+/// @param code code being searched for
+/// @param length length of code
+/// @return how many instances of character `x` are in code
 int howmany(unsigned char x, unsigned char *code, int length)
 {
   int r = 0;
@@ -136,6 +158,15 @@ int *analyze(unsigned char *code, unsigned char *guess, int length, unsigned cha
   return r;
 }
 
+/// @brief get number of possible still possible based on given guess and feedback
+/// @param S array of booleans for each code
+/// @param now current guess
+/// @param c number of colors that are in the solution but in the wrong place
+/// @param p number of colors that are in the correct place
+/// @param length length of the code
+/// @param colors number of unique colors in game
+/// @param n length of array S
+/// @return number of possible solutions still possible
 int reduce(bool *S, unsigned char *now, int c, int p, int length, unsigned char colors, int n)
 {
   int x = 0;
@@ -155,6 +186,13 @@ int reduce(bool *S, unsigned char *now, int c, int p, int length, unsigned char 
   return x;
 }
 
+/// @brief get highest number of possibly remaining results for a guess based on all possible feedback options
+/// @param S current list of possible codes
+/// @param now current guess
+/// @param length length of code
+/// @param colors number of unique codes
+/// @param n length of array S
+/// @return highest number of possibly remaining results for a guess
 int full_reduce(bool *S, unsigned char *now, int length, unsigned char colors, int n)
 {
   int responses[13][2] = {{0, 0}, {1, 0}, {0, 1}, {2, 0}, {1, 1}, {0, 2}, {3, 0}, {2, 1}, {1, 2}, {0, 3}, {4, 0}, {3, 1}, {2, 2}};
@@ -171,6 +209,14 @@ int full_reduce(bool *S, unsigned char *now, int length, unsigned char colors, i
   return x;
 }
 
+/// @brief reduces the set of possible results based on the feedback given
+/// @param S boolean array of currently possible guesses
+/// @param now current guess
+/// @param c number of colors in the guess that are in the solution but in the wrong place
+/// @param p number of colors in the guess that are in the right place
+/// @param length length of the code
+/// @param colors number of unique colors
+/// @param n length of S
 void set_reduce(bool *S, unsigned char *now, int c, int p, int length, unsigned char colors, int n)
 {
   // int j = 0;
@@ -188,6 +234,12 @@ void set_reduce(bool *S, unsigned char *now, int c, int p, int length, unsigned 
   }
 }
 
+/// @brief Find best move based on minimax decisionmaking
+/// @param S array of booleans representing set of currently still possible results based on previous feedbacck and guesses
+/// @param length length of code
+/// @param colors number of possible colors to choose from
+/// @param n length of array S
+/// @return 
 unsigned char *best_move(bool *S, int length, unsigned char colors, int n)
 {
   int best = 0;
