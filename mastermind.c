@@ -293,25 +293,25 @@ int main()
   // always start with the same move 0011
   unsigned char *move = calloc(sizeof(unsigned char), length);
   get_best_next_move(code_set, length, colors, n, move); // get_code_inplace(length, colors, 7, move);
-  int newN = n;
+  int remaining_candidates = n;
   while (n > 0)
   {
-    printf("%d remaining candidates\n", newN);
+    printf("%d remaining candidates\n", remaining_candidates);
     print_guess(move, length);
     printf("\n");
     int pegs_with_correct_color;
     int pegs_in_correct_place;
-    printf("Colors: ");
-    scanf("%d", &pegs_with_correct_color);
-    printf("Place: ");
+    printf("Pegs in the right place: ");
     scanf("%d", &pegs_in_correct_place);
+    printf("Pegs in the wrong place, but present in the code: ");
+    scanf("%d", &pegs_with_correct_color);
     if (pegs_with_correct_color == 0 && pegs_in_correct_place == 4)
     {
       printf("Yay! I win!\n");
       break;
     }
-    newN = reduce(code_set, move, pegs_with_correct_color, pegs_in_correct_place, length, colors, n);
-    if (newN == 0)
+    remaining_candidates = reduce(code_set, move, pegs_with_correct_color, pegs_in_correct_place, length, colors, n);
+    if (remaining_candidates == 0)
     {
       printf("I'm Stumped...\n");
       break;
