@@ -57,13 +57,13 @@ void get_code_inplace(int length, unsigned char colors, int index, unsigned char
 /// @return boolean array of true values for each code
 bool *initialize_array(int length, unsigned char colors, int n)
 {
-  bool *S = (bool *)malloc(n * sizeof(bool));
+  bool *code_set = (bool *)malloc(n * sizeof(bool));
   int i = 0;
   for (i = 0; i < n; i++)
   {
-    S[i] = true;
+    code_set[i] = true;
   }
-  return S;
+  return code_set;
 }
 
 /// @brief prints a single code to the console
@@ -79,17 +79,17 @@ void print_guess(unsigned char *now, int length)
 }
 
 /// @brief prints all codes for which corresponding index is true
-/// @param S array of booleans - one element for each value
-/// @param n length of boolean array S
+/// @param code_set array of booleans - one element for each value
+/// @param n length of boolean array code_set
 /// @param length length of code
 /// @param colors unique colors used in game
-void print_all_guesses(bool *S, int n, int length, unsigned char colors)
+void print_all_guesses(bool *code_set, int n, int length, unsigned char colors)
 { // Prints all current possibilities
   int i;
   unsigned char *code = calloc(sizeof(unsigned char), length);
   for (i = 0; i < n; i++)
   {
-    if (S[i])
+    if (code_set[i])
     {
       get_code_inplace(length, colors, i, code);
       print_guess(code, length);
@@ -164,15 +164,15 @@ void analyze(unsigned char *potential_solution, unsigned char *guess, int length
 }
 
 /// @brief get number of possible still possible based on given guess and feedback
-/// @param S array of booleans for each code
+/// @param code_set array of booleans for each code
 /// @param now current guess
 /// @param c number of colors that are in the solution but in the wrong place
 /// @param p number of colors that are in the correct place
 /// @param length length of the code
 /// @param colors number of unique colors in game
-/// @param n length of array S
+/// @param n length of array code_set
 /// @return number of possible solutions still possible
-int reduce(bool *S, unsigned char *guess, int pegs_with_correct_color, int pegs_in_correct_place, int length, unsigned char colors, int n)
+int reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_color, int pegs_in_correct_place, int length, unsigned char colors, int n)
 {
   int x = 0;
   int i;
@@ -180,7 +180,7 @@ int reduce(bool *S, unsigned char *guess, int pegs_with_correct_color, int pegs_
   struct Feedback feedback;
   for (i = 0; i < n; i++)
   {
-    if (S[i])
+    if (code_set[i])
     {
       get_code_inplace(length, colors, i, potential_solution);
       analyze(potential_solution, guess, length, colors, &feedback);
@@ -193,20 +193,20 @@ int reduce(bool *S, unsigned char *guess, int pegs_with_correct_color, int pegs_
 }
 
 /// @brief get highest number of possibly remaining results for a guess based on all possible feedback options
-/// @param S current list of possible codes
+/// @param code_set current list of possible codes
 /// @param now current guess
 /// @param length length of code
 /// @param colors number of unique codes
-/// @param n length of array S
+/// @param n length of array code_set
 /// @return highest number of possibly remaining results for a guess
-int full_reduce(bool *S, unsigned char *now, int length, unsigned char colors, int n)
+int full_reduce(bool *code_set, unsigned char *now, int length, unsigned char colors, int n)
 {
   int responses[13][2] = {{0, 0}, {1, 0}, {0, 1}, {2, 0}, {1, 1}, {0, 2}, {3, 0}, {2, 1}, {1, 2}, {0, 3}, {4, 0}, {3, 1}, {2, 2}};
   int x = 0;
   int i;
   for (i = 0; i < 13; i++)
   {
-    int y = reduce(S, now, responses[i][0], responses[i][1], length, colors, n);
+    int y = reduce(code_set, now, responses[i][0], responses[i][1], length, colors, n);
     if (y > x)
     {
       x = y;
@@ -216,14 +216,14 @@ int full_reduce(bool *S, unsigned char *now, int length, unsigned char colors, i
 }
 
 /// @brief reduces the set of possible results based on the feedback given
-/// @param S boolean array of currently possible guesses
+/// @param code_set boolean array of currently possible guesses
 /// @param now current guess
 /// @param pegs_with_correct_color number of colors in the guess that are in the solution but in the wrong place
 /// @param pegs_in_correct_place number of colors in the guess that are in the right place
 /// @param length length of the code
 /// @param colors number of unique colors
-/// @param n length of S
-void set_reduce(bool *S, unsigned char *guess, int pegs_with_correct_color, int pegs_in_correct_place, int length, unsigned char colors, int n)
+/// @param n length of code_set
+void set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_color, int pegs_in_correct_place, int length, unsigned char colors, int n)
 {
   // int j = 0;
   int i;
@@ -231,13 +231,13 @@ void set_reduce(bool *S, unsigned char *guess, int pegs_with_correct_color, int 
   struct Feedback feedback;
   for (i = 0; i < n; i++)
   {
-    if (S[i])
+    if (code_set[i])
     {
       get_code_inplace(length, colors, i, code);
       analyze(code, guess, length, colors, &feedback);
       if (feedback.pegs_with_correct_color != pegs_with_correct_color || feedback.pegs_in_correct_place != pegs_in_correct_place)
       {
-        S[i] = false;
+        code_set[i] = false;
       }
     }
   }
@@ -245,26 +245,26 @@ void set_reduce(bool *S, unsigned char *guess, int pegs_with_correct_color, int 
 }
 
 /// @brief Find best move based on minimax decisionmaking
-/// @param S array of booleans representing set of currently still possible results based on previous feedbacck and guesses
+/// @param code_set array of booleans representing set of currently still possible results based on previous feedbacck and guesses
 /// @param length length of code
 /// @param colors number of possible colors to choose from
-/// @param n length of array S
+/// @param n length of array code_set
 /// @return
-unsigned char *get_best_move(bool *S, int length, unsigned char colors, int n)
+unsigned char *get_best_move(bool *code_set, int length, unsigned char colors, int n)
 {
   int best_code_index = 0;
   unsigned char *code = calloc(sizeof(unsigned char), length);
   get_code_inplace(length, colors, 0, code);
-  float current_best_reduction = full_reduce(S, code, length, colors, n);
+  float current_best_reduction = full_reduce(code_set, code, length, colors, n);
   int i;
   for (i = 1; i < n; i++)
   {
-    if (S[i])
+    if (code_set[i])
     {
       get_code_inplace(length, colors, i, code);
-      int x = full_reduce(S, code, length, colors, n);
+      int x = full_reduce(code_set, code, length, colors, n);
       // printf("code, Value: ");
-      // print_guess(S[i], length);
+      // print_guess(code_set[i], length);
       // printf(" %d\n", x);
       if (x < current_best_reduction)
       {
@@ -288,11 +288,11 @@ int main()
   {
     n *= colors;
   }
-  bool *S = initialize_array(length, colors, n);
+  bool *code_set = initialize_array(length, colors, n);
 
   // always start with the same move 0011
   unsigned char *move = calloc(sizeof(unsigned char), length);
-  get_code_inplace(length, colors, 7, move); // get_best_move(S, length, colors, n);
+  get_code_inplace(length, colors, 7, move); // get_best_move(code_set, length, colors, n);
   int newN = n;
   while (n > 0)
   {
@@ -310,17 +310,17 @@ int main()
       printf("Yay! I win!\n");
       break;
     }
-    newN = reduce(S, move, c, p, length, colors, n);
+    newN = reduce(code_set, move, c, p, length, colors, n);
     if (newN == 0)
     {
       printf("I'm Stumped...\n");
       break;
     }
-    set_reduce(S, move, c, p, length, colors, n);
+    set_reduce(code_set, move, c, p, length, colors, n);
     free(move);
-    move = get_best_move(S, length, colors, n);
+    move = get_best_move(code_set, length, colors, n);
   }
-  free(S);
+  free(code_set);
   free(move);
   return 0;
 }
