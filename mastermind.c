@@ -32,8 +32,8 @@
 
 struct Feedback
 {
-  unsigned int pegs_in_correct_place;
-  unsigned int pegs_with_correct_color;
+  size_t pegs_in_correct_place;
+  size_t pegs_with_correct_color;
 };
 
 /// @brief copy code string based on code length and number of unique colors
@@ -56,8 +56,9 @@ void get_code_inplace(int length, unsigned char colors, int index, unsigned char
 /// @param colors
 /// @param n
 /// @return boolean array of true values for each code
-bool *initialize_array(int length, unsigned char colors, int n)
+bool *initialize_array(int length, unsigned char colors)
 {
+  int n = pow(colors, length);
   bool *code_set = calloc(sizeof(bool), n);
   for (int i = 0; i < n; ++i)
   {
@@ -164,56 +165,36 @@ void get_feedback(unsigned char *potential_solution, unsigned char *guess, int l
   out_feedback->pegs_with_correct_color = pegs_with_correct_color;
 }
 
-/// @brief get number of possible still possible based on given guess and feedback
-/// @param code_set array of booleans for each code
-/// @param now current guess
-/// @param pegs_with_correct_color number of colors that are in the solution but in the wrong place
-/// @param pegs_in_correct_place number of colors that are in the correct place
-/// @param length length of the code
-/// @param colors number of unique colors in game
-/// @param n length of array code_set
-/// @return number of possible solutions still possible
-int reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_color, int pegs_in_correct_place, int length, unsigned char colors, int n)
+int max_feedback_result(bool *code_set, unsigned char *guess, int length, unsigned char colors)
 {
-  int x = 0;
-  int i;
-  unsigned char *potential_solution = calloc(sizeof(unsigned char), length);
   struct Feedback feedback;
-  for (i = 0; i < n; i++)
-  {
-    if (code_set[i])
-    {
-      get_code_inplace(length, colors, i, potential_solution);
-      get_feedback(potential_solution, guess, length, colors, &feedback);
-      if (feedback.pegs_with_correct_color == pegs_with_correct_color && feedback.pegs_in_correct_place == pegs_in_correct_place)
-        x++;
-    }
-  }
-  free(potential_solution);
-  return x;
-}
+  size_t *feedback_buckets = calloc(sizeof(size_t), length * length + 1);
+  size_t largest_feedback_bucket_size = 0;
+  size_t n = pow(colors, length);
+  unsigned char *possible_solution = calloc(sizeof(unsigned char), length);
 
-/// @brief get highest number of possibly remaining results for a guess based on all possible feedback options
-/// @param code_set current list of possible codes
-/// @param now current guess
-/// @param length length of code
-/// @param colors number of unique codes
-/// @param n length of array code_set
-/// @return highest number of possibly remaining results for a guess
-int full_reduce(bool *code_set, unsigned char *now, int length, unsigned char colors, int n)
-{
-  int responses[13][2] = {{0, 0}, {1, 0}, {0, 1}, {2, 0}, {1, 1}, {0, 2}, {3, 0}, {2, 1}, {1, 2}, {0, 3}, {4, 0}, {3, 1}, {2, 2}};
-  int x = 0;
-  int i;
-  for (i = 0; i < 13; i++)
+  for (size_t i = 0; i < n; ++i)
   {
-    int y = reduce(code_set, now, responses[i][0], responses[i][1], length, colors, n);
-    if (y > x)
+    if (!code_set[i])
+      continue;
+
+    get_code_inplace(length, colors, i, possible_solution);
+    get_feedback(possible_solution, guess, length, colors, &feedback);
+    feedback_buckets[feedback.pegs_in_correct_place * length + feedback.pegs_with_correct_color]++;
+  }
+
+  for (size_t i = 0; i < length * length; ++i)
+  {
+    if (feedback_buckets[i] > largest_feedback_bucket_size)
     {
-      x = y;
+      largest_feedback_bucket_size = feedback_buckets[i];
     }
   }
-  return x;
+
+  free(feedback_buckets);
+  free(possible_solution);
+
+  return largest_feedback_bucket_size;
 }
 
 /// @brief reduces the set of possible results based on the feedback given
@@ -223,26 +204,32 @@ int full_reduce(bool *code_set, unsigned char *now, int length, unsigned char co
 /// @param pegs_in_correct_place number of colors in the guess that are in the right place
 /// @param length length of the code
 /// @param colors number of unique colors
-/// @param n length of code_set
-void set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_color, int pegs_in_correct_place, int length, unsigned char colors, int n)
+size_t set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_color, int pegs_in_correct_place, int length, unsigned char colors)
 {
   // int j = 0;
-  int i;
-  unsigned char *code = calloc(sizeof(unsigned char), length);
   struct Feedback feedback;
-  for (i = 0; i < n; i++)
+  int n = pow(colors, length);
+  unsigned char *code = calloc(sizeof(unsigned char), length);
+  size_t new_set_size = 0;
+  for (int i = 0; i < n; i++)
   {
-    if (code_set[i])
+    if (!code_set[i])
+      continue;
+
+    get_code_inplace(length, colors, i, code);
+    get_feedback(code, guess, length, colors, &feedback);
+    if (feedback.pegs_with_correct_color != pegs_with_correct_color || feedback.pegs_in_correct_place != pegs_in_correct_place)
     {
-      get_code_inplace(length, colors, i, code);
-      get_feedback(code, guess, length, colors, &feedback);
-      if (feedback.pegs_with_correct_color != pegs_with_correct_color || feedback.pegs_in_correct_place != pegs_in_correct_place)
-      {
-        code_set[i] = false;
-      }
+      code_set[i] = false;
+    }
+    else
+    {
+      new_set_size++;
     }
   }
   free(code);
+
+  return new_set_size;
 }
 
 /// @brief Find best move based on minimax decisionmaking
@@ -250,41 +237,36 @@ void set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_colo
 /// @param length length of code
 /// @param colors number of possible colors to choose from
 /// @param n length of array code_set
-void get_best_next_move(bool *code_set, int length, unsigned char colors, int n, unsigned char *out_best_move)
+void get_best_next_move(bool *code_set, int length, unsigned char colors, unsigned char *out_best_move)
 {
   struct timeval start;
   struct timeval end;
 
   gettimeofday(&start, NULL);
 
+  int n = pow(colors, length);
   int best_code_index = 0;
+  size_t best_code_reduction = __SIZE_MAX__;
   unsigned char *guess = calloc(sizeof(unsigned char), length);
-  get_code_inplace(length, colors, 0, guess);
-  float current_best_reduction = full_reduce(code_set, guess, length, colors, n);
-  int i;
-  for (i = 1; i < n; i++)
+
+  for (int i = 0; i < n; ++i)
   {
-    if (code_set[i])
+    get_code_inplace(length, colors, i, guess);
+    size_t guess_largest_feedback_bucket = max_feedback_result(code_set, guess, length, colors);
+    if (guess_largest_feedback_bucket < best_code_reduction)
     {
-      get_code_inplace(length, colors, i, guess);
-      int x = full_reduce(code_set, guess, length, colors, n);
-      // printf("code, Value: ");
-      // print_guess(code_set[i], length);
-      // printf(" %d\n", x);
-      if (x < current_best_reduction)
-      {
-        best_code_index = i;
-        current_best_reduction = x;
-      }
+      best_code_reduction = guess_largest_feedback_bucket;
+      best_code_index = i;
     }
   }
 
-  get_code_inplace(length, colors, best_code_index, out_best_move);
   free(guess);
   gettimeofday(&end, NULL);
 
   long duration_in_milliseconds = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
   printf("finding best move took %ld milliseconds\n", duration_in_milliseconds);
+
+  get_code_inplace(length, colors, best_code_index, out_best_move);
 }
 
 int main()
@@ -292,11 +274,11 @@ int main()
   int length = 4;
   unsigned char colors = 6;
   int n = pow(colors, length);
-  bool *code_set = initialize_array(length, colors, n);
+  bool *code_set = initialize_array(length, colors);
 
   // always start with the same move 0011
   unsigned char *move = calloc(sizeof(unsigned char), length);
-  get_best_next_move(code_set, length, colors, n, move); // get_code_inplace(length, colors, 7, move);
+  get_best_next_move(code_set, length, colors, move); // get_code_inplace(length, colors, 7, move);
 
   int remaining_candidates = n;
   while (n > 0)
@@ -315,14 +297,13 @@ int main()
       printf("Yay! I win!\n");
       break;
     }
-    remaining_candidates = reduce(code_set, move, pegs_with_correct_color, pegs_in_correct_place, length, colors, n);
+    remaining_candidates = set_reduce(code_set, move, pegs_with_correct_color, pegs_in_correct_place, length, colors);
     if (remaining_candidates == 0)
     {
-      printf("I'm Stumped...\n");
+      printf("I'm stumped...\n");
       break;
     }
-    set_reduce(code_set, move, pegs_with_correct_color, pegs_in_correct_place, length, colors, n);
-    get_best_next_move(code_set, length, colors, n, move);
+    get_best_next_move(code_set, length, colors, move);
   }
   free(code_set);
   free(move);
