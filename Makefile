@@ -22,7 +22,7 @@
 
 
 mastermind: mastermind.c
-	clang mastermind.c -O3 -Wall -Werror -o mastermind.out
+	clang mastermind.c -O3 -Wall -Werror -lm -o mastermind.out
 test:
 	./mastermind.out < tests/test0.txt > test.out
 	diff test.out tests/test0-output.txt
