@@ -56,16 +56,16 @@ void get_code_inplace(int length, unsigned char colors, int index, unsigned char
 /// @param colors
 /// @param n
 /// @return boolean array of true values for each code
-bool *initialize_array(int length, unsigned char colors)
+bool *initialize_solution_set(int length, unsigned char colors)
 {
   int n = pow(colors, length);
-  bool *code_set = calloc(sizeof(bool), n);
+  bool *solution_set = calloc(sizeof(bool), n);
   for (int i = 0; i < n; ++i)
   {
-    code_set[i] = true;
+    solution_set[i] = true;
   }
 
-  return code_set;
+  return solution_set;
 }
 
 /// @brief prints a single code to the console
@@ -81,17 +81,17 @@ void print_guess(unsigned char *now, int length)
 }
 
 /// @brief prints all codes for which corresponding index is true
-/// @param code_set array of booleans - one element for each value
-/// @param n length of boolean array code_set
+/// @param solution_set array of booleans - one element for each value
+/// @param n length of boolean array solution_set
 /// @param length length of code
 /// @param colors unique colors used in game
-void print_all_guesses(bool *code_set, int n, int length, unsigned char colors)
+void print_all_guesses(bool *solution_set, int n, int length, unsigned char colors)
 { // Prints all current possibilities
   int i;
   unsigned char *code = calloc(sizeof(unsigned char), length);
   for (i = 0; i < n; i++)
   {
-    if (code_set[i])
+    if (solution_set[i])
     {
       get_code_inplace(length, colors, i, code);
       print_guess(code, length);
@@ -165,7 +165,7 @@ void get_feedback(unsigned char *potential_solution, unsigned char *guess, int l
   out_feedback->pegs_with_correct_color = pegs_with_correct_color;
 }
 
-int max_feedback_result(bool *code_set, unsigned char *guess, int length, unsigned char colors)
+int max_feedback_result(bool *solution_set, unsigned char *guess, int length, unsigned char colors)
 {
   struct Feedback feedback;
   size_t *feedback_buckets = calloc(sizeof(size_t), length * length + 1);
@@ -175,7 +175,7 @@ int max_feedback_result(bool *code_set, unsigned char *guess, int length, unsign
 
   for (size_t i = 0; i < n; ++i)
   {
-    if (!code_set[i])
+    if (!solution_set[i])
       continue;
 
     get_code_inplace(length, colors, i, possible_solution);
@@ -198,13 +198,13 @@ int max_feedback_result(bool *code_set, unsigned char *guess, int length, unsign
 }
 
 /// @brief reduces the set of possible results based on the feedback given
-/// @param code_set boolean array of currently possible guesses
+/// @param solution_set boolean array of currently possible guesses
 /// @param now current guess
 /// @param pegs_with_correct_color number of colors in the guess that are in the solution but in the wrong place
 /// @param pegs_in_correct_place number of colors in the guess that are in the right place
 /// @param length length of the code
 /// @param colors number of unique colors
-size_t set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_color, int pegs_in_correct_place, int length, unsigned char colors)
+size_t set_reduce(bool *solution_set, unsigned char *guess, int pegs_with_correct_color, int pegs_in_correct_place, int length, unsigned char colors)
 {
   // int j = 0;
   struct Feedback feedback;
@@ -213,14 +213,14 @@ size_t set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_co
   size_t new_set_size = 0;
   for (int i = 0; i < n; i++)
   {
-    if (!code_set[i])
+    if (!solution_set[i])
       continue;
 
     get_code_inplace(length, colors, i, code);
     get_feedback(code, guess, length, colors, &feedback);
     if (feedback.pegs_with_correct_color != pegs_with_correct_color || feedback.pegs_in_correct_place != pegs_in_correct_place)
     {
-      code_set[i] = false;
+      solution_set[i] = false;
     }
     else
     {
@@ -233,11 +233,11 @@ size_t set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_co
 }
 
 /// @brief Find best move based on minimax decisionmaking
-/// @param code_set array of booleans representing set of currently still possible results based on previous feedbacck and guesses
+/// @param solution_set array of booleans representing set of currently still possible results based on previous feedbacck and guesses
 /// @param length length of code
 /// @param colors number of possible colors to choose from
-/// @param n length of array code_set
-void get_best_next_move(bool *code_set, int length, unsigned char colors, unsigned char *out_best_move)
+/// @param n length of array solution_set
+void get_best_next_move(bool *solution_set, int length, unsigned char colors, unsigned char *out_best_move)
 {
   struct timeval start;
   struct timeval end;
@@ -251,8 +251,11 @@ void get_best_next_move(bool *code_set, int length, unsigned char colors, unsign
 
   for (int i = 0; i < n; ++i)
   {
+    if (!solution_set[i])
+      continue;
+
     get_code_inplace(length, colors, i, guess);
-    size_t guess_largest_feedback_bucket = max_feedback_result(code_set, guess, length, colors);
+    size_t guess_largest_feedback_bucket = max_feedback_result(solution_set, guess, length, colors);
     if (guess_largest_feedback_bucket < best_code_reduction)
     {
       best_code_reduction = guess_largest_feedback_bucket;
@@ -274,11 +277,11 @@ int main()
   int length = 4;
   unsigned char colors = 6;
   int n = pow(colors, length);
-  bool *code_set = initialize_array(length, colors);
+  bool *solution_set = initialize_solution_set(length, colors);
 
   // always start with the same move 0011
   unsigned char *move = calloc(sizeof(unsigned char), length);
-  get_best_next_move(code_set, length, colors, move); // get_code_inplace(length, colors, 7, move);
+  get_best_next_move(solution_set, length, colors, move); // get_code_inplace(length, colors, 7, move);
 
   int remaining_candidates = n;
   while (n > 0)
@@ -297,15 +300,15 @@ int main()
       printf("Yay! I win!\n");
       break;
     }
-    remaining_candidates = set_reduce(code_set, move, pegs_with_correct_color, pegs_in_correct_place, length, colors);
+    remaining_candidates = set_reduce(solution_set, move, pegs_with_correct_color, pegs_in_correct_place, length, colors);
     if (remaining_candidates == 0)
     {
       printf("I'm stumped...\n");
       break;
     }
-    get_best_next_move(code_set, length, colors, move);
+    get_best_next_move(solution_set, length, colors, move);
   }
-  free(code_set);
+  free(solution_set);
   free(move);
   return 0;
 }
