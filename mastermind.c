@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <time.h>
+#include <sys/time.h>
 #include <math.h>
 
 struct Feedback
@@ -58,12 +58,12 @@ void get_code_inplace(int length, unsigned char colors, int index, unsigned char
 /// @return boolean array of true values for each code
 bool *initialize_array(int length, unsigned char colors, int n)
 {
-  bool *code_set = (bool *)malloc(n * sizeof(bool));
-  int i = 0;
-  for (i = 0; i < n; i++)
+  bool *code_set = calloc(sizeof(bool), n);
+  for (int i = 0; i < n; ++i)
   {
     code_set[i] = true;
   }
+
   return code_set;
 }
 
@@ -250,8 +250,13 @@ void set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_colo
 /// @param length length of code
 /// @param colors number of possible colors to choose from
 /// @param n length of array code_set
-void get_best_next_move(bool *code_set, int length, unsigned char colors, int n, unsigned char* out_best_move)
+void get_best_next_move(bool *code_set, int length, unsigned char colors, int n, unsigned char *out_best_move)
 {
+  struct timeval start;
+  struct timeval end;
+
+  gettimeofday(&start, NULL);
+
   int best_code_index = 0;
   unsigned char *guess = calloc(sizeof(unsigned char), length);
   get_code_inplace(length, colors, 0, guess);
@@ -276,23 +281,23 @@ void get_best_next_move(bool *code_set, int length, unsigned char colors, int n,
 
   get_code_inplace(length, colors, best_code_index, out_best_move);
   free(guess);
+  gettimeofday(&end, NULL);
+
+  long duration_in_milliseconds = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
+  printf("finding best move took %ld milliseconds\n", duration_in_milliseconds);
 }
 
 int main()
 {
   int length = 4;
   unsigned char colors = 6;
-  int n = 1;
-  int i;
-  for (i = 1; i <= length; i++)
-  {
-    n *= colors;
-  }
+  int n = pow(colors, length);
   bool *code_set = initialize_array(length, colors, n);
 
   // always start with the same move 0011
   unsigned char *move = calloc(sizeof(unsigned char), length);
   get_best_next_move(code_set, length, colors, n, move); // get_code_inplace(length, colors, 7, move);
+
   int remaining_candidates = n;
   while (n > 0)
   {
