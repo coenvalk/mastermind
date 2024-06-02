@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <math.h>
 
 struct Feedback
 {
@@ -133,7 +134,7 @@ int count_all_instances(unsigned char x, unsigned char *code, int length)
   return r;
 }
 
-void analyze(unsigned char *potential_solution, unsigned char *guess, int length, unsigned char colors, struct Feedback *out_feedback)
+void get_feedback(unsigned char *potential_solution, unsigned char *guess, int length, unsigned char colors, struct Feedback *out_feedback)
 {
   int pegs_in_correct_place = 0;
   int pegs_with_correct_color = 0;
@@ -166,8 +167,8 @@ void analyze(unsigned char *potential_solution, unsigned char *guess, int length
 /// @brief get number of possible still possible based on given guess and feedback
 /// @param code_set array of booleans for each code
 /// @param now current guess
-/// @param c number of colors that are in the solution but in the wrong place
-/// @param p number of colors that are in the correct place
+/// @param pegs_with_correct_color number of colors that are in the solution but in the wrong place
+/// @param pegs_in_correct_place number of colors that are in the correct place
 /// @param length length of the code
 /// @param colors number of unique colors in game
 /// @param n length of array code_set
@@ -183,7 +184,7 @@ int reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_color, in
     if (code_set[i])
     {
       get_code_inplace(length, colors, i, potential_solution);
-      analyze(potential_solution, guess, length, colors, &feedback);
+      get_feedback(potential_solution, guess, length, colors, &feedback);
       if (feedback.pegs_with_correct_color == pegs_with_correct_color && feedback.pegs_in_correct_place == pegs_in_correct_place)
         x++;
     }
@@ -234,7 +235,7 @@ void set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_colo
     if (code_set[i])
     {
       get_code_inplace(length, colors, i, code);
-      analyze(code, guess, length, colors, &feedback);
+      get_feedback(code, guess, length, colors, &feedback);
       if (feedback.pegs_with_correct_color != pegs_with_correct_color || feedback.pegs_in_correct_place != pegs_in_correct_place)
       {
         code_set[i] = false;
@@ -249,20 +250,19 @@ void set_reduce(bool *code_set, unsigned char *guess, int pegs_with_correct_colo
 /// @param length length of code
 /// @param colors number of possible colors to choose from
 /// @param n length of array code_set
-/// @return
-unsigned char *get_best_move(bool *code_set, int length, unsigned char colors, int n)
+void get_best_next_move(bool *code_set, int length, unsigned char colors, int n, unsigned char* out_best_move)
 {
   int best_code_index = 0;
-  unsigned char *code = calloc(sizeof(unsigned char), length);
-  get_code_inplace(length, colors, 0, code);
-  float current_best_reduction = full_reduce(code_set, code, length, colors, n);
+  unsigned char *guess = calloc(sizeof(unsigned char), length);
+  get_code_inplace(length, colors, 0, guess);
+  float current_best_reduction = full_reduce(code_set, guess, length, colors, n);
   int i;
   for (i = 1; i < n; i++)
   {
     if (code_set[i])
     {
-      get_code_inplace(length, colors, i, code);
-      int x = full_reduce(code_set, code, length, colors, n);
+      get_code_inplace(length, colors, i, guess);
+      int x = full_reduce(code_set, guess, length, colors, n);
       // printf("code, Value: ");
       // print_guess(code_set[i], length);
       // printf(" %d\n", x);
@@ -274,8 +274,8 @@ unsigned char *get_best_move(bool *code_set, int length, unsigned char colors, i
     }
   }
 
-  get_code_inplace(length, colors, best_code_index, code);
-  return code;
+  get_code_inplace(length, colors, best_code_index, out_best_move);
+  free(guess);
 }
 
 int main()
@@ -292,33 +292,32 @@ int main()
 
   // always start with the same move 0011
   unsigned char *move = calloc(sizeof(unsigned char), length);
-  get_code_inplace(length, colors, 7, move); // get_best_move(code_set, length, colors, n);
+  get_best_next_move(code_set, length, colors, n, move); // get_code_inplace(length, colors, 7, move);
   int newN = n;
   while (n > 0)
   {
     printf("%d remaining candidates\n", newN);
     print_guess(move, length);
     printf("\n");
-    int c;
-    int p;
+    int pegs_with_correct_color;
+    int pegs_in_correct_place;
     printf("Colors: ");
-    scanf("%d", &c);
+    scanf("%d", &pegs_with_correct_color);
     printf("Place: ");
-    scanf("%d", &p);
-    if (c == 0 && p == 4)
+    scanf("%d", &pegs_in_correct_place);
+    if (pegs_with_correct_color == 0 && pegs_in_correct_place == 4)
     {
       printf("Yay! I win!\n");
       break;
     }
-    newN = reduce(code_set, move, c, p, length, colors, n);
+    newN = reduce(code_set, move, pegs_with_correct_color, pegs_in_correct_place, length, colors, n);
     if (newN == 0)
     {
       printf("I'm Stumped...\n");
       break;
     }
-    set_reduce(code_set, move, c, p, length, colors, n);
-    free(move);
-    move = get_best_move(code_set, length, colors, n);
+    set_reduce(code_set, move, pegs_with_correct_color, pegs_in_correct_place, length, colors, n);
+    get_best_next_move(code_set, length, colors, n, move);
   }
   free(code_set);
   free(move);
